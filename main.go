@@ -10,11 +10,19 @@ import (
 )
 
 func main() {
+	config, err := loadConfig()
+	if err != nil {
+		fmt.Printf("Squirrel error: %v\n", err)
+		return
+	}
+
+	if len(os.Args) != 3 {
+		fmt.Println("Squirrel error: You must provide a summary and a description")
+		return
+	}
+
 	summary := os.Args[1]
 	description := os.Args[2]
-	jiraURL := os.Getenv("SQUIRREL_JIRA_URL")
-	jiraAPIKey := os.Getenv("SQUIRREL_JIRA_APIKEY")
-	jiraUsername := os.Getenv("SQUIRREL_JIRA_USERNAME")
 
 	if len(summary) == 0 {
 		fmt.Println("Squirrel error: summary cannot be empty")
@@ -27,10 +35,10 @@ func main() {
 
 	fmt.Printf("Creating story '%s' with description '%s'\n", summary, description)
 	tp := jira.BasicAuthTransport{
-		Username: jiraUsername,
-		Password: jiraAPIKey,
+		Username: config.JiraUsername,
+		Password: config.JiraAPIKey,
 	}
-	client, _ := jira.NewClient(tp.Client(), jiraURL)
+	client, _ := jira.NewClient(tp.Client(), config.JiraURL)
 
 	user, b, err := client.User.GetSelf()
 	if err != nil {
@@ -41,7 +49,7 @@ func main() {
 		fmt.Printf("%#v\n", b.Response)
 	}
 	boards, b, err := client.Board.GetAllBoards(&jira.BoardListOptions{
-		Name: "BOSS",
+		ProjectKeyOrID: config.JiraProjectKey,
 	})
 	if err != nil {
 		fmt.Printf("%v\n", err)
@@ -51,11 +59,11 @@ func main() {
 		fmt.Printf("%#v\n", b.Response)
 	}
 	if len(boards.Values) == 0 {
-		fmt.Println("Squirrel error: no board found with name 'boss'")
+		fmt.Printf("Squirrel error: no board found for project '%s'\n", config.JiraProjectKey)
 		return
 	}
 	if len(boards.Values) > 1 {
-		fmt.Println("Squirrel error: more than one board found with name 'boss'")
+		fmt.Printf("Squirrel error: more than one board found for project '%s'\n", config.JiraProjectKey)
 		return
 	}
 
@@ -90,14 +98,14 @@ func main() {
 				Name: "Story",
 			},
 			Project: jira.Project{
-				Key: "BOSS",
+				Key: config.JiraProjectKey,
 			},
 			Summary: summary,
 		},
 	}
 
 	issue, b2, err := client.Issue.Create(&i)
-	if b2.StatusCode != 200 {
+	if b2.StatusCode != 201 {
 		aaa, _ := io.ReadAll(b2.Body)
 		fmt.Println(string(aaa))
 	}
@@ -117,5 +125,5 @@ func main() {
 		}
 	}
 	client.Issue.DoTransition(issue.ID, transitionID)
-	fmt.Printf("Created story %s\n", issue.Key)
+	fmt.Printf("Created story %s/browse/%s\n", config.JiraURL, issue.Key)
 }
