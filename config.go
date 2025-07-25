@@ -52,6 +52,12 @@ func initConfig(configPath string) (*Config, error) {
 		return nil, fmt.Errorf("failed to create config directory %s: %w", configDir, err)
 	}
 
+	config := Config{
+		JiraURL:      "https://your-domain.atlassian.net",
+		JiraAPIKey:   "your-api-key-here",
+		JiraUsername: "your-username-here",
+	}
+
 	// Prompt user for configuration values
 	fmt.Println("🔧 First time setup: Please provide your JIRA configuration")
 
@@ -59,30 +65,30 @@ func initConfig(configPath string) (*Config, error) {
 
 	fmt.Print("JIRA URL (e.g., https://your-domain.atlassian.net): ")
 	scanner.Scan()
-	jiraURL := strings.TrimSpace(scanner.Text())
+	jiraURL := strings.TrimSuffix(strings.TrimSpace(scanner.Text()), "/")
+	if jiraURL != "" {
+		config.JiraURL = jiraURL
+	}
 
 	fmt.Print("JIRA API Key (generate a new one here: https://id.atlassian.com/manage-profile/security/api-tokens): ")
 	scanner.Scan()
 	jiraAPIKey := strings.TrimSpace(scanner.Text())
+	if jiraAPIKey != "" {
+		config.JiraAPIKey = jiraAPIKey
+	}
 
 	fmt.Print("JIRA Username: ")
 	scanner.Scan()
-	jiraUsername := strings.TrimSuffix(strings.TrimSpace(scanner.Text()), "/")
+	jiraUsername := strings.TrimSpace(scanner.Text())
+	if jiraUsername != "" {
+		config.JiraUsername = jiraUsername
+	}
 
 	fmt.Print("Project Key (e.g., BOSS): ")
 	scanner.Scan()
 	projectKey := strings.TrimSpace(scanner.Text())
-
-	// Validate input
-	if jiraURL == "" || jiraAPIKey == "" || jiraUsername == "" || projectKey == "" {
-		return nil, fmt.Errorf("all configuration values are required")
-	}
-
-	config := Config{
-		JiraURL:        jiraURL,
-		JiraAPIKey:     jiraAPIKey,
-		JiraUsername:   jiraUsername,
-		JiraProjectKey: projectKey,
+	if projectKey != "" {
+		config.JiraProjectKey = projectKey
 	}
 
 	file, err := os.Create(configPath)
