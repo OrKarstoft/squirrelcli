@@ -92,6 +92,9 @@ func main() {
 			Project: jira.Project{
 				Key: "BOSS",
 			},
+			Parent: &jira.Parent{
+				Key: "BOSS-576",
+			},
 			Summary: summary,
 		},
 	}
