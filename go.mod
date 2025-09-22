@@ -2,7 +2,7 @@ module github.com/BESTSELLER/squirrelcli
 
 go 1.24.4
 
-require github.com/andygrunwald/go-jira v1.16.0
+require github.com/andygrunwald/go-jira v1.17.0
 
 require (
 	github.com/fatih/structs v1.1.0 // indirect
